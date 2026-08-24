@@ -178,7 +178,7 @@ export function Scene({ wrongCount, status, skin, quote, quoteKey, juice, label 
       aria-label={label}
     >
       <svg className="stage-svg" viewBox="0 0 1200 1600" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true">
-        <image href="/art/hills.jpg?v=6" x="0" y="0" width="1200" height="1600" />
+        <image href={`${import.meta.env.BASE_URL}art/hills.jpg?v=6`} x="0" y="0" width="1200" height="1600" />
         <g transform={`translate(${HANG_X} ${HANG_Y}) rotate(${status === "won" ? 0 : tilt})`}>
         <g className="swing-root">
           {status === "playing" ? (
