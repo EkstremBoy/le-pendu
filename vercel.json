@@ -1,0 +1,5 @@
+{
+  "framework": null,
+  "buildCommand": "node scripts/decode-art.mjs && node scripts/with-app-env.mjs vite build",
+  "installCommand": "npm install"
+}

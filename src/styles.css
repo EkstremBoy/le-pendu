@@ -1,0 +1,434 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f4eee4;
+  --color-paper-2: #ebe3d6;
+  --color-paper-3: #e0d6c6;
+  --color-ink: #2c261e;
+  --color-ink-soft: #5c5348;
+  --color-muted: #8a8175;
+  --color-accent: #c45c3e;
+  --color-accent-hot: #b04e33;
+  --color-accent-fg: #fbf7f1;
+  --color-line: #d9d0c3;
+  --color-sage: #5e7a62;
+  --color-sage-fg: #f4eee4;
+  --color-wood: #6b4a32;
+  --color-wood-deep: #4a3222;
+  --color-rope: #c4a574;
+  --color-sky: #d5e3ee;
+  --color-danger: #a33b32;
+  --color-good: #4f7a58;
+  --color-skin: #f0c9a8;
+
+  --font-sans: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --motion-stagger: 40ms;
+  --motion-micro: 80ms;
+  --motion-quick: 150ms;
+  --motion-fast: 250ms;
+  --motion-medium: 350ms;
+  --motion-slow: 400ms;
+  --motion-emphasis: 500ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-pop: cubic-bezier(0.34, 1.36, 0.64, 1);
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+}
+
+.app-world {
+  min-height: 100dvh;
+  transform-origin: 50% 50%;
+  transition: transform 0.7s var(--ease-smooth-out);
+}
+.app-world.is-flipped {
+  transform: rotate(180deg);
+}
+
+.gravity-root {
+  transform: none;
+}
+.stage[data-status="won"] .gravity-root {
+  transform: none;
+  transition: transform 0.45s var(--ease-smooth-out);
+}
+
+.skin-leo {
+  --puppet-skin: #f0c9a8;
+  --puppet-hair: #3d2b1f;
+  --puppet-shirt: #c45c3e;
+  --puppet-shirt-2: #f4eee4;
+  --puppet-pants: #3d4f5f;
+  --puppet-shoe: #2c261e;
+  --puppet-extra: #3d2b1f;
+}
+.skin-nori {
+  --puppet-skin: #f0c9a8;
+  --puppet-hair: #2c261e;
+  --puppet-shirt: #e8dcc8;
+  --puppet-shirt-2: #c45c3e;
+  --puppet-pants: #5c5348;
+  --puppet-shoe: #2c261e;
+  --puppet-extra: #2c261e;
+}
+.skin-bit {
+  --puppet-skin: #c5cdd4;
+  --puppet-hair: #6b4a32;
+  --puppet-shirt: #5c6570;
+  --puppet-shirt-2: #c45c3e;
+  --puppet-pants: #3d4f5f;
+  --puppet-shoe: #2c261e;
+  --puppet-extra: #c45c3e;
+}
+.skin-rex {
+  --puppet-skin: #7a9e62;
+  --puppet-hair: #4a6a38;
+  --puppet-shirt: #d7e0b8;
+  --puppet-shirt-2: #c45c3e;
+  --puppet-pants: #5e7a62;
+  --puppet-shoe: #4a3222;
+  --puppet-extra: #4a6a38;
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  height: auto;
+  border: 1px solid var(--color-line);
+  background: var(--color-sky);
+  border-radius: var(--radius-xl);
+}
+
+.stage-bg {
+  display: none;
+}
+
+.stage-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.limb {
+  opacity: 0;
+}
+.limb.on {
+  opacity: 1;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.swing-root {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: none;
+}
+
+.stage[data-wrong="0"] .swing-root,
+.stage[data-wrong="1"] .swing-root {
+  animation-duration: 3.4s;
+}
+.stage[data-wrong="5"] .swing-root,
+.stage[data-wrong="6"] .swing-root {
+  animation-duration: 1.6s;
+}
+
+.stage[data-status="won"] .swing-root {
+  animation: descend 1.15s var(--ease-smooth-out) forwards;
+}
+.stage[data-perfect="true"] .swing-root {
+  animation: walk-in 0.8s var(--ease-smooth-out) forwards;
+}
+.stage[data-status="lost"] .swing-root {
+  animation: slump 0.9s var(--ease-out) forwards;
+}
+
+.stage[data-juice="wrong"] {
+  animation: stage-shake 0.42s var(--ease-out);
+}
+
+.halo {
+  opacity: 0;
+}
+.stage[data-status="lost"] .halo {
+  animation: halo-up 1.4s var(--ease-smooth-out) 0.2s forwards;
+}
+
+.speech {
+  position: absolute;
+  z-index: 2;
+  left: 4%;
+  top: 8%;
+  max-width: 9.25rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  border-radius: 14px 14px 4px 14px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  box-shadow: 0 8px 24px color-mix(in oklab, var(--color-ink) 10%, transparent);
+  animation: bubble-in 0.35s var(--ease-pop);
+}
+
+.speech-empty {
+  top: auto;
+  left: auto;
+  right: 5%;
+  bottom: 8%;
+  border-radius: 14px 14px 14px 4px;
+}
+
+.stage[data-status="won"] .speech {
+  top: 8%;
+  left: 4%;
+  right: auto;
+  bottom: auto;
+}
+
+.confetti span {
+  position: absolute;
+  top: -8px;
+  width: 7px;
+  height: 11px;
+  border-radius: 1px;
+  animation: confetti-fall 1.4s var(--ease-out) forwards;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.letter-cell {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 2.4rem;
+  border-bottom: 3px solid var(--color-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 5vw, 2rem);
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.letter-cell.is-gap {
+  min-width: 0.7rem;
+  border-bottom-color: transparent;
+}
+.letter-cell.is-punct {
+  border-bottom-color: transparent;
+}
+.letter-cell.is-filled {
+  animation: letter-pop 0.35s var(--ease-pop);
+}
+
+.key-miss {
+  background: color-mix(in oklab, var(--color-ink) 8%, var(--color-paper-2)) !important;
+  color: var(--color-muted) !important;
+  text-decoration: line-through;
+}
+.key-hit {
+  background: var(--color-sage) !important;
+  color: var(--color-sage-fg) !important;
+  border-color: transparent !important;
+}
+
+.dock {
+  animation: dock-in 0.35s var(--ease-smooth-out);
+}
+
+@keyframes hang-swing {
+  0%,
+  100% {
+    transform: rotate(-3.2deg);
+  }
+  50% {
+    transform: rotate(3.2deg);
+  }
+}
+@keyframes descend {
+  0% {
+    transform: rotate(-2deg) translate(0, 0);
+  }
+  20% {
+    transform: rotate(0deg) translate(0, 16px);
+  }
+  75% {
+    transform: rotate(0deg) translate(0, 176px);
+  }
+  88% {
+    transform: rotate(0deg) translate(0, 162px) scale(1.05, 0.92);
+  }
+  100% {
+    transform: rotate(0deg) translate(0, 168px) scale(1, 1);
+  }
+}
+@keyframes walk-in {
+  0% {
+    transform: translate(-64px, 168px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(0, 168px);
+    opacity: 1;
+  }
+}
+@keyframes slump {
+  0% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-7deg) translateY(4px);
+  }
+  100% {
+    transform: rotate(9deg) translateY(8px);
+  }
+}
+@keyframes stage-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+@keyframes halo-up {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-28px);
+  }
+}
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes letter-pop {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(160px) rotate(220deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swing-root,
+  .limb,
+  .speech,
+  .letter-cell.is-filled,
+  .dock,
+  .stage[data-juice="wrong"],
+  .halo,
+  .confetti span,
+  .app-world,
+  .gravity-root {
+    animation: none !important;
+    transition: none !important;
+  }
+  .limb.on {
+    opacity: 1;
+    transform: none;
+  }
+  .gravity-root {
+    transform: none;
+  }
+  .app-world.is-flipped {
+    transform: none;
+  }
+  .stage[data-status="won"] .swing-root,
+  .stage[data-perfect="true"] .swing-root {
+    transform: translate(0, 168px);
+  }
+}
