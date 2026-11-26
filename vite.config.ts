@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
@@ -13,6 +13,30 @@ import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
+/**
+ * Vite `base` prefixes browser URLs, but Nitro writes the client files at the
+ * output root. Duplicate the files the page actually requests under that base
+ * so `/games/le-pendu/assets/*` (and the hills image and favicon) resolve.
+ */
+function deployBaseStaticPlugin(): Plugin {
+  return {
+    name: "deploy-base-static",
+    apply: "build",
+    closeBundle() {
+      const base = (process.env.DEPLOY_BASE || "/").replace(/^\/|\/$/g, "");
+      const staticDir = join(process.cwd(), ".vercel/output/static");
+      if (!base || !existsSync(join(staticDir, "assets"))) return;
+      const destRoot = join(staticDir, base);
+      mkdirSync(destRoot, { recursive: true });
+      for (const name of ["assets", "art", "favicon.svg"]) {
+        const src = join(staticDir, name);
+        if (!existsSync(src)) continue;
+        cpSync(src, join(destRoot, name), { recursive: true });
+      }
+    },
+  };
+}
+
 function hasGlobbedMigrations(root: string): boolean {
   try {
     return readdirSync(join(root, "migrations")).some(isMigrationFile);
@@ -183,5 +207,6 @@ export default defineConfig(({ command, isPreview }) => ({
         ]
       : []),
     viteReact(),
+    deployBaseStaticPlugin(),
   ],
 }));
