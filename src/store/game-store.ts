@@ -2,25 +2,15 @@ import { create } from "zustand";
 import {
   type CategoryId,
   type GameStatus,
-  type ModeId,
+  type LengthId,
+  type RealCategoryId,
   type SkinId,
   type ViewId,
   MAX_WRONG,
 } from "@/lib/game/types";
-import {
-  isWordComplete,
-  remainingLetters,
-  wordHasLetter,
-  fold,
-} from "@/lib/game/letters";
+import { isWordComplete, remainingLetters, wordHasLetter, fold } from "@/lib/game/letters";
 import { dailyWord, pickWord, todayKey } from "@/lib/game/words";
-import {
-  hintQuote,
-  loseQuote,
-  rightQuote,
-  winQuote,
-  wrongQuote,
-} from "@/lib/game/quotes";
+import { hintQuote, loseQuote, rightQuote, winQuote, wrongQuote } from "@/lib/game/quotes";
 import { loadStats, saveStats, type Stats } from "@/lib/game/storage";
 import { isSkinUnlocked } from "@/lib/game/skins";
 import { playSfx, setSoundEnabled, unlockAudio } from "@/lib/game/audio";
@@ -32,8 +22,9 @@ type State = {
   ready: boolean;
   view: ViewId;
   stats: Stats;
-  mode: ModeId;
+  length: LengthId;
   category: CategoryId;
+  wordCategory: RealCategoryId | null;
   word: string;
   guessed: string[];
   wrongCount: number;
@@ -51,15 +42,12 @@ type State = {
 type Actions = {
   hydrate: () => void;
   setView: (view: ViewId) => void;
-  setMode: (mode: ModeId) => void;
+  setLength: (length: LengthId) => void;
   setCategory: (category: CategoryId) => void;
   setSkin: (skin: SkinId) => void;
   toggleSound: () => void;
   setLocale: (locale: Locale) => void;
-  startGame: (opts?: {
-    daily?: boolean;
-    duoWord?: string;
-  }) => void;
+  startGame: (opts?: { daily?: boolean; duoWord?: string }) => void;
   guess: (letter: string) => void;
   useHint: () => void;
   backToMenu: () => void;
@@ -69,8 +57,9 @@ const initial: State = {
   ready: false,
   view: "menu",
   stats: loadStats(),
-  mode: "kid",
+  length: "medium",
   category: "hasard",
+  wordCategory: null,
   word: "",
   guessed: [],
   wrongCount: 0,
@@ -101,7 +90,7 @@ export const useGame = create<State & Actions>((set, get) => ({
   },
 
   setView: (view) => set({ view }),
-  setMode: (mode) => set({ mode }),
+  setLength: (length) => set({ length }),
   setCategory: (category) => set({ category }),
 
   setSkin: (skin) => {
@@ -127,16 +116,18 @@ export const useGame = create<State & Actions>((set, get) => ({
 
   startGame: (opts) => {
     unlockAudio();
-    const { mode, category, stats } = get();
+    const { length, category, stats } = get();
     const locale = stats.locale;
     const isDaily = Boolean(opts?.daily);
     const isDuo = Boolean(opts?.duoWord);
     const recent = stats.recentWords ?? [];
-    const word = opts?.duoWord
-      ? opts.duoWord
+    const picked = opts?.duoWord
+      ? null
       : isDaily
-        ? dailyWord(new Date(), mode, locale)
-        : pickWord(category, mode, new Set(recent), locale);
+        ? dailyWord(new Date(), length, locale)
+        : pickWord(category, length, new Set(recent), locale);
+    const word = opts?.duoWord ? opts.duoWord : picked!.word;
+    const wordCategory = picked ? picked.category : null;
     playSfx("click");
     const nextRecent = isDuo
       ? recent
@@ -145,6 +136,7 @@ export const useGame = create<State & Actions>((set, get) => ({
     set({
       view: "play",
       word,
+      wordCategory,
       guessed: [],
       wrongCount: 0,
       hintUsed: false,

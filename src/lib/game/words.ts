@@ -1,11 +1,39 @@
-import type { CategoryId, ModeId } from "./types";
+import type { CategoryId, LengthId, RealCategoryId } from "./types";
+import { LENGTHS, REAL_CATEGORY_IDS } from "./types";
 import { letterCount } from "./letters";
 import type { Locale } from "@/lib/i18n";
 import { BANKS_EN } from "./words-en";
 
-type Banks = Record<Exclude<CategoryId, "hasard">, Record<ModeId, string[]>>;
+type Tier = "mini" | "kid" | "ado";
+type SourceBanks = Record<RealCategoryId, Record<Tier, string[]>>;
+type LengthBanks = Record<RealCategoryId, Record<LengthId, string[]>>;
 
-const BANKS: Banks = {
+/**
+ * Letter-count bands, measured on the pooled lists (hyphens don't count).
+ * The same cuts fit both languages: every category keeps at least 17 words
+ * in each band. Words outside 3–14 letters are dropped so they still fit
+ * the board.
+ */
+export const LENGTH_BOUNDS: Record<Locale, Record<LengthId, { min: number; max: number }>> = {
+  fr: {
+    short: { min: 3, max: 5 },
+    medium: { min: 6, max: 8 },
+    long: { min: 9, max: 14 },
+  },
+  en: {
+    short: { min: 3, max: 5 },
+    medium: { min: 6, max: 8 },
+    long: { min: 9, max: 14 },
+  },
+};
+
+/** Below this, a category × length pool is widened toward nearby lengths. */
+export const MIN_POOL = 8;
+
+const ABS_MIN = 3;
+const ABS_MAX = 14;
+
+const BANKS: SourceBanks = {
   animaux: {
     mini: [
       "oie", "âne", "rat", "chat", "lion", "loup", "ours", "chien", "tigre",
@@ -322,109 +350,170 @@ const BANKS: Banks = {
   },
 };
 
-function uniqueKeep(words: string[], mode: ModeId): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  const min = mode === "mini" ? 3 : mode === "kid" ? 5 : 7;
-  const max = mode === "mini" ? 5 : mode === "kid" ? 9 : 14;
+const TIERS: Tier[] = ["mini", "kid", "ado"];
+
+function dedupePush(into: string[], seen: Set<string>, words: readonly string[]) {
   for (const w of words) {
-    const clean = w.trim();
-    if (!clean || clean.includes(" ")) continue;
-    const key = clean.toLowerCase();
+    const key = w.toLowerCase();
     if (seen.has(key)) continue;
-    const n = letterCount(clean);
-    if (n < min || n > max) continue;
     seen.add(key);
-    out.push(clean);
+    into.push(w);
+  }
+}
+
+/** Pool the old difficulty piles, then split by letter count. */
+function bucket(src: SourceBanks, locale: Locale): LengthBanks {
+  const bounds = LENGTH_BOUNDS[locale];
+  const out = {} as LengthBanks;
+  for (const cat of REAL_CATEGORY_IDS) {
+    const seen = new Set<string>();
+    const words: string[] = [];
+    for (const tier of TIERS) {
+      for (const raw of src[cat][tier]) {
+        const clean = raw.trim();
+        if (!clean || clean.includes(" ")) continue;
+        const key = clean.toLowerCase();
+        if (seen.has(key)) continue;
+        const n = letterCount(clean);
+        if (n < ABS_MIN || n > ABS_MAX) continue;
+        seen.add(key);
+        words.push(clean);
+      }
+    }
+    const bands: Record<LengthId, string[]> = { short: [], medium: [], long: [] };
+    for (const w of words) {
+      const n = letterCount(w);
+      for (const len of LENGTHS) {
+        const b = bounds[len];
+        if (n >= b.min && n <= b.max) {
+          bands[len].push(w);
+          break;
+        }
+      }
+    }
+    out[cat] = bands;
   }
   return out;
 }
 
-function bankOf(src: Banks): Banks {
-  return {
-    animaux: {
-      mini: uniqueKeep(src.animaux.mini, "mini"),
-      kid: uniqueKeep(src.animaux.kid, "kid"),
-      ado: uniqueKeep(src.animaux.ado, "ado"),
-    },
-    nourriture: {
-      mini: uniqueKeep(src.nourriture.mini, "mini"),
-      kid: uniqueKeep(src.nourriture.kid, "kid"),
-      ado: uniqueKeep(src.nourriture.ado, "ado"),
-    },
-    ecole: {
-      mini: uniqueKeep(src.ecole.mini, "mini"),
-      kid: uniqueKeep(src.ecole.kid, "kid"),
-      ado: uniqueKeep(src.ecole.ado, "ado"),
-    },
-    sports: {
-      mini: uniqueKeep(src.sports.mini, "mini"),
-      kid: uniqueKeep(src.sports.kid, "kid"),
-      ado: uniqueKeep(src.sports.ado, "ado"),
-    },
-    espace: {
-      mini: uniqueKeep(src.espace.mini, "mini"),
-      kid: uniqueKeep(src.espace.kid, "kid"),
-      ado: uniqueKeep(src.espace.ado, "ado"),
-    },
-    maison: {
-      mini: uniqueKeep(src.maison.mini, "mini"),
-      kid: uniqueKeep(src.maison.kid, "kid"),
-      ado: uniqueKeep(src.maison.ado, "ado"),
-    },
-    nature: {
-      mini: uniqueKeep(src.nature.mini, "mini"),
-      kid: uniqueKeep(src.nature.kid, "kid"),
-      ado: uniqueKeep(src.nature.ado, "ado"),
-    },
-    metiers: {
-      mini: uniqueKeep(src.metiers.mini, "mini"),
-      kid: uniqueKeep(src.metiers.kid, "kid"),
-      ado: uniqueKeep(src.metiers.ado, "ado"),
-    },
-  };
+/**
+ * If a band is thin, pull in the nearest lengths until there are `min` words.
+ * Order: the requested length, then the neighbour, then whatever remains.
+ */
+export function widenPool(
+  byLength: Record<LengthId, readonly string[]>,
+  length: LengthId,
+  min = MIN_POOL,
+): string[] {
+  if (byLength[length].length >= min) return [...byLength[length]];
+  const order: LengthId[] =
+    length === "short"
+      ? ["short", "medium", "long"]
+      : length === "long"
+        ? ["long", "medium", "short"]
+        : ["medium", "short", "long"];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of order) {
+    dedupePush(out, seen, byLength[id]);
+    if (out.length >= min) return out;
+  }
+  return out;
 }
 
-const FILTERED = bankOf(BANKS);
-const FILTERED_EN = bankOf(BANKS_EN);
+const FILTERED: Record<Locale, LengthBanks> = {
+  fr: bucket(BANKS, "fr"),
+  en: bucket(BANKS_EN, "en"),
+};
 
-function pack(locale: Locale): Banks {
-  return locale === "en" ? FILTERED_EN : FILTERED;
+function pack(locale: Locale): LengthBanks {
+  return FILTERED[locale];
 }
 
-export function wordsFor(category: CategoryId, mode: ModeId, locale: Locale = "fr"): string[] {
-  const banks = pack(locale);
+function exactPool(category: RealCategoryId, length: LengthId, locale: Locale): string[] {
+  return pack(locale)[category][length];
+}
+
+function resolvedPool(category: RealCategoryId, length: LengthId, locale: Locale): string[] {
+  return widenPool(pack(locale)[category], length);
+}
+
+export function lengthHint(locale: Locale, id: LengthId): string {
+  const { min, max } = LENGTH_BOUNDS[locale][id];
+  return locale === "en" ? `${min} to ${max} letters.` : `${min} à ${max} lettres.`;
+}
+
+export function wordsFor(category: CategoryId, length: LengthId, locale: Locale = "fr"): string[] {
   if (category === "hasard") {
     const seen = new Set<string>();
     const out: string[] = [];
-    for (const id of Object.keys(banks) as Array<Exclude<CategoryId, "hasard">>) {
-      for (const w of banks[id][mode]) {
-        const k = w.toLowerCase();
-        if (seen.has(k)) continue;
-        seen.add(k);
-        out.push(w);
-      }
+    for (const id of REAL_CATEGORY_IDS) {
+      dedupePush(out, seen, resolvedPool(id, length, locale));
     }
     return out;
   }
-  return banks[category][mode];
+  return resolvedPool(category, length, locale);
 }
 
 export function allWords(locale: Locale = "fr"): string[] {
-  return (["mini", "kid", "ado"] as ModeId[]).flatMap((m) => wordsFor("hasard", m, locale));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const length of LENGTHS) dedupePush(out, seen, wordsFor("hasard", length, locale));
+  return out;
+}
+
+export type WordPick = {
+  word: string;
+  category: RealCategoryId;
+};
+
+function pickFrom(pool: string[], used: Set<string>, rng: () => number): string {
+  const fresh = pool.filter((w) => !used.has(w.toLowerCase()));
+  const source = fresh.length > 0 ? fresh : pool;
+  return source[Math.floor(rng() * source.length)]!;
+}
+
+/** Categories that can actually supply this length, richest bands first. */
+function categoriesFor(length: LengthId, locale: Locale): RealCategoryId[] {
+  const rich = REAL_CATEGORY_IDS.filter((id) => exactPool(id, length, locale).length >= MIN_POOL);
+  if (rich.length > 0) return rich;
+  const any = REAL_CATEGORY_IDS.filter((id) => resolvedPool(id, length, locale).length > 0);
+  return any.length > 0 ? any : [...REAL_CATEGORY_IDS];
+}
+
+function categoryOf(word: string, locale: Locale): RealCategoryId {
+  const key = word.toLowerCase();
+  const banks = pack(locale);
+  for (const id of REAL_CATEGORY_IDS) {
+    for (const length of LENGTHS) {
+      if (banks[id][length].some((w) => w.toLowerCase() === key)) return id;
+    }
+  }
+  return "animaux";
 }
 
 export function pickWord(
   category: CategoryId,
-  mode: ModeId,
+  length: LengthId,
   used: Set<string>,
   locale: Locale = "fr",
-): string {
-  let pool = wordsFor(category, mode, locale);
-  if (pool.length === 0) pool = wordsFor("hasard", mode, locale);
-  const fresh = pool.filter((w) => !used.has(w.toLowerCase()));
-  const source = fresh.length > 0 ? fresh : pool;
-  return source[Math.floor(Math.random() * source.length)]!;
+  rng: () => number = Math.random,
+): WordPick {
+  const options = categoriesFor(length, locale);
+  let from: RealCategoryId =
+    category === "hasard" ? options[Math.floor(rng() * options.length)]! : category;
+  let pool = resolvedPool(from, length, locale);
+  let widenedToUnion = false;
+  if (pool.length === 0) {
+    from = options[Math.floor(rng() * options.length)]!;
+    pool = resolvedPool(from, length, locale);
+  }
+  if (pool.length === 0) {
+    pool = wordsFor("hasard", length, locale);
+    widenedToUnion = true;
+  }
+  const word = pickFrom(pool, used, rng);
+  return { word, category: widenedToUnion ? categoryOf(word, locale) : from };
 }
 
 function hashString(s: string): number {
@@ -443,20 +532,23 @@ export function todayKey(d = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-export function dailyWord(d = new Date(), mode: ModeId = "kid", locale: Locale = "fr"): string {
-  const pool = wordsFor("hasard", mode, locale);
-  if (pool.length === 0) return pickWord("hasard", mode, new Set(), locale);
-  const i = hashString(`${todayKey(d)}-${mode}-${locale}`) % pool.length;
-  return pool[i]!;
+export function dailyWord(
+  d = new Date(),
+  length: LengthId = "medium",
+  locale: Locale = "fr",
+): WordPick {
+  const pool = wordsFor("hasard", length, locale);
+  if (pool.length === 0) return pickWord("hasard", length, new Set(), locale);
+  const i = hashString(`${todayKey(d)}-${length}-${locale}`) % pool.length;
+  const word = pool[i]!;
+  return { word, category: categoryOf(word, locale) };
 }
 
 export function bankCounts(locale: Locale = "fr"): Record<string, number> {
   const banks = pack(locale);
   const out: Record<string, number> = {};
-  (Object.keys(banks) as Array<Exclude<CategoryId, "hasard">>).forEach((c) => {
-    (["mini", "kid", "ado"] as ModeId[]).forEach((m) => {
-      out[`${c}.${m}`] = banks[c][m].length;
-    });
-  });
+  for (const c of REAL_CATEGORY_IDS) {
+    for (const m of LENGTHS) out[`${c}.${m}`] = banks[c][m].length;
+  }
   return out;
 }

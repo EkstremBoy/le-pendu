@@ -9,7 +9,7 @@ import { Scene } from "./Scene";
 import { WordBoard } from "./WordBoard";
 import { Keyboard } from "./Keyboard";
 import { cn } from "@/lib/utils";
-import { categoryLabel, modeLabel, t } from "@/lib/i18n";
+import { categoryLabel, lengthLabel, t } from "@/lib/i18n";
 import { TiltAsk } from "./TiltAsk";
 import { enableTilt } from "@/lib/game/gravity";
 
@@ -24,8 +24,9 @@ export function Play() {
     quoteKey,
     juice,
     juiceKey,
-    mode,
+    length,
     category,
+    wordCategory,
     isDaily,
     isDuo,
     stats,
@@ -77,9 +78,13 @@ export function Play() {
         </Button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-ink">
-            {isDuo ? t(locale, "twoPlayers") : isDaily ? t(locale, "daily") : categoryLabel(locale, category)}
+            {isDuo
+              ? t(locale, "twoPlayers")
+              : isDaily
+                ? t(locale, "daily")
+                : categoryLabel(locale, wordCategory ?? category)}
           </p>
-          <p className="text-xs text-muted">{modeLabel(locale, mode)}</p>
+          <p className="text-xs text-muted">{lengthLabel(locale, length)}</p>
         </div>
         <ol className="flex gap-1" aria-label={t(locale, "lives", { n: left })}>
           {Array.from({ length: MAX_WRONG }).map((_, i) => (
@@ -124,15 +129,13 @@ export function Play() {
               {status === "won" ? t(locale, "saved") : t(locale, "lost")}
             </p>
             <p className="mt-1 text-sm text-ink-soft">
-              {status === "lost" ? (
-                t(locale, "theWordWas", { word: word.toUpperCase() })
-              ) : wrongCount === 0 ? (
-                t(locale, "perfectWin")
-              ) : left === 1 ? (
-                t(locale, "triesLeftOne", { n: left })
-              ) : (
-                t(locale, "triesLeftMany", { n: left })
-              )}
+              {status === "lost"
+                ? t(locale, "theWordWas", { word: word.toUpperCase() })
+                : wrongCount === 0
+                  ? t(locale, "perfectWin")
+                  : left === 1
+                    ? t(locale, "triesLeftOne", { n: left })
+                    : t(locale, "triesLeftMany", { n: left })}
             </p>
             <div className="mt-4 flex gap-2">
               <Button className="flex-1" onClick={replay}>

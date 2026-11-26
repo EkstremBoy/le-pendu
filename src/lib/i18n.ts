@@ -4,9 +4,8 @@ export const LOCALES: Locale[] = ["fr", "en"];
 
 const FR = {
   appTitle: "Le Pendu",
-  menuTag: "Version douce",
   menuLead: "Sauve {name} avant la dernière lettre.",
-  level: "Niveau",
+  length: "Longueur",
   category: "Catégorie",
   saveThem: "Sauve-le",
   daily: "Défi du jour",
@@ -50,12 +49,9 @@ const FR = {
   langFr: "FR",
   langEn: "EN",
   language: "Langue",
-  modeMiniLabel: "Mini",
-  modeKidLabel: "Normal",
-  modeAdoLabel: "Expert",
-  modeMiniBlurb: "Mots courts, bien connus.",
-  modeKidBlurb: "Un vrai défi, encore lisible.",
-  modeAdoBlurb: "Longs, pièges, vocabulaire large.",
+  lengthShort: "Court",
+  lengthMedium: "Moyen",
+  lengthLong: "Long",
   catHasard: "Hasard",
   catAnimaux: "Animaux",
   catNourriture: "Nourriture",
@@ -78,9 +74,8 @@ type Dict = { [K in keyof typeof FR]: string };
 
 const EN: Dict = {
   appTitle: "Hangman",
-  menuTag: "The gentle cut",
   menuLead: "Save {name} before the last letter.",
-  level: "Level",
+  length: "Length",
   category: "Category",
   saveThem: "Save him",
   daily: "Daily challenge",
@@ -124,12 +119,9 @@ const EN: Dict = {
   langFr: "FR",
   langEn: "EN",
   language: "Language",
-  modeMiniLabel: "Mini",
-  modeKidLabel: "Normal",
-  modeAdoLabel: "Expert",
-  modeMiniBlurb: "Short, familiar words.",
-  modeKidBlurb: "A real challenge, still readable.",
-  modeAdoBlurb: "Longer words, wider vocabulary.",
+  lengthShort: "Short",
+  lengthMedium: "Medium",
+  lengthLong: "Long",
   catHasard: "Random",
   catAnimaux: "Animals",
   catNourriture: "Food",
@@ -152,11 +144,7 @@ export const STRINGS: Record<Locale, Dict> = { fr: FR, en: EN };
 
 export type StringKey = keyof typeof FR;
 
-export function t(
-  locale: Locale,
-  key: StringKey,
-  vars?: Record<string, string | number>,
-): string {
+export function t(locale: Locale, key: StringKey, vars?: Record<string, string | number>): string {
   let out: string = STRINGS[locale][key] ?? STRINGS.fr[key];
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
@@ -181,22 +169,13 @@ export function categoryLabel(locale: Locale, id: string): string {
   return t(locale, map[id] ?? "catHasard");
 }
 
-export function modeLabel(locale: Locale, id: string): string {
+export function lengthLabel(locale: Locale, id: string): string {
   const map: Record<string, StringKey> = {
-    mini: "modeMiniLabel",
-    kid: "modeKidLabel",
-    ado: "modeAdoLabel",
+    short: "lengthShort",
+    medium: "lengthMedium",
+    long: "lengthLong",
   };
-  return t(locale, map[id] ?? "modeKidLabel");
-}
-
-export function modeBlurb(locale: Locale, id: string): string {
-  const map: Record<string, StringKey> = {
-    mini: "modeMiniBlurb",
-    kid: "modeKidBlurb",
-    ado: "modeAdoBlurb",
-  };
-  return t(locale, map[id] ?? "modeKidBlurb");
+  return t(locale, map[id] ?? "lengthMedium");
 }
 
 export function skinBlurb(locale: Locale, id: string): string {

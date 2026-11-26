@@ -17,17 +17,13 @@ import {
   VolumeX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  CATEGORY_IDS,
-  MODES,
-  type CategoryId,
-} from "@/lib/game/types";
+import { CATEGORY_IDS, LENGTHS, type CategoryId } from "@/lib/game/types";
 import { skinName } from "@/lib/game/skins";
-import { todayKey } from "@/lib/game/words";
+import { lengthHint, todayKey } from "@/lib/game/words";
 import { useGame } from "@/store/game-store";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
-import { categoryLabel, modeBlurb, modeLabel, t } from "@/lib/i18n";
+import { categoryLabel, lengthLabel, t } from "@/lib/i18n";
 import { LangToggle } from "./LangToggle";
 import { TiltAsk } from "./TiltAsk";
 import { enableTilt } from "@/lib/game/gravity";
@@ -45,71 +41,65 @@ const ICONS: Record<CategoryId, LucideIcon> = {
 };
 
 export function Menu() {
-  const {
-    mode,
-    category,
-    stats,
-    setMode,
-    setCategory,
-    startGame,
-    setView,
-    toggleSound,
-  } = useGame();
+  const { length, category, stats, setLength, setCategory, startGame, setView, toggleSound } =
+    useGame();
   const locale = stats.locale;
   const heroName = skinName(stats.skin, locale);
   const dailyDone = stats.lastDailyWin === todayKey();
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-5 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="mb-8 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
-            {t(locale, "menuTag")}
-          </p>
-          <h1 className="mt-1 font-display text-5xl text-ink sm:text-6xl">{t(locale, "appTitle")}</h1>
-          <p className="mt-2 max-w-[18rem] text-pretty text-ink-soft">
-            {t(locale, "menuLead", { name: heroName })}
-          </p>
+      <header className="mb-8">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="min-w-0 font-display text-[2.65rem] leading-none text-ink sm:text-6xl">
+            {t(locale, "appTitle")}
+          </h1>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <LangToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={stats.sound ? t(locale, "soundOn") : t(locale, "soundOff")}
+              onClick={toggleSound}
+            >
+              {stats.sound ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={stats.sound ? t(locale, "soundOn") : t(locale, "soundOff")}
-          onClick={toggleSound}
-        >
-          {stats.sound ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
-        </Button>
+        <p className="mt-2 max-w-[22rem] text-pretty text-ink-soft">
+          {t(locale, "menuLead", { name: heroName })}
+        </p>
       </header>
 
-      <div className="mb-6">
-        <LangToggle />
-      </div>
-
       <section className="mb-6">
-        <p className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">{t(locale, "level")}</p>
+        <p className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">
+          {t(locale, "length")}
+        </p>
         <div className="grid grid-cols-3 gap-2 rounded-[20px] bg-paper-2 p-1.5">
-          {MODES.map((id) => {
-            const on = mode === id;
+          {LENGTHS.map((id) => {
+            const on = length === id;
             return (
               <button
                 key={id}
                 type="button"
-                onClick={() => setMode(id)}
+                onClick={() => setLength(id)}
                 className={cn(
                   "rounded-[14px] px-2 py-3 text-center transition-colors duration-150",
                   on ? "bg-paper text-ink shadow-sm" : "text-ink-soft hover:text-ink",
                 )}
               >
-                <span className="block text-sm font-semibold">{modeLabel(locale, id)}</span>
+                <span className="block text-sm font-semibold">{lengthLabel(locale, id)}</span>
               </button>
             );
           })}
         </div>
-        <p className="mt-2 text-sm text-ink-soft">{modeBlurb(locale, mode)}</p>
+        <p className="mt-2 text-sm text-ink-soft">{lengthHint(locale, length)}</p>
       </section>
 
       <section className="mb-8">
-        <p className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">{t(locale, "category")}</p>
+        <p className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">
+          {t(locale, "category")}
+        </p>
         <div className="flex flex-wrap gap-2">
           {CATEGORY_IDS.map((id) => {
             const Icon = ICONS[id];
@@ -164,7 +154,11 @@ export function Menu() {
         </Button>
       </div>
 
-      <Button variant="ghost" className="mt-2 w-full justify-center" onClick={() => setView("skins")}>
+      <Button
+        variant="ghost"
+        className="mt-2 w-full justify-center"
+        onClick={() => setView("skins")}
+      >
         <Shirt className="size-4" />
         {t(locale, "characters")}
       </Button>

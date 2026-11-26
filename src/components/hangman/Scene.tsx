@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { GameStatus, SkinId } from "@/lib/game/types";
 import type { Juice } from "@/store/game-store";
 import { useTilt } from "@/lib/game/gravity";
+import { LeoFigure } from "./Leo";
 
 const HANG_X = 708;
 const HANG_Y = 320;
@@ -206,6 +207,10 @@ export function Scene({ wrongCount, status, skin, quote, quoteKey, juice, label 
               <ellipse cx="0" cy="16" rx="20" ry="7" fill="none" stroke="#e9c46a" strokeWidth="2.4" />
             </g>
 
+            {skin === "leo" ? (
+              <LeoFigure show={show} status={status} panic={panic} />
+            ) : (
+            <>
             {skin === "nori" ? (
               <Limb on={show(2)}>
                 <path d="M14 92 Q34 108 20 128" fill="none" stroke={INK} strokeWidth="8.2" strokeLinecap="round" />
@@ -326,6 +331,8 @@ export function Scene({ wrongCount, status, skin, quote, quoteKey, juice, label 
                 <Face status={status} panic={panic} skin={skin} />
               </g>
             </Limb>
+            </>
+            )}
           </g>
         </g>
         </g>

@@ -1,6 +1,7 @@
-import type { CategoryId, ModeId } from "./types";
+import type { CategoryId } from "./types";
 
-type Banks = Record<Exclude<CategoryId, "hasard">, Record<ModeId, string[]>>;
+type Tier = "mini" | "kid" | "ado";
+type Banks = Record<Exclude<CategoryId, "hasard">, Record<Tier, string[]>>;
 
 export const BANKS_EN: Banks = {
   animaux: {
