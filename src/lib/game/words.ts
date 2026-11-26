@@ -498,8 +498,13 @@ export function pickWord(
   used: Set<string>,
   locale: Locale = "fr",
   rng: () => number = Math.random,
+  avoid: RealCategoryId | null = null,
 ): WordPick {
-  const options = categoriesFor(length, locale);
+  let options = categoriesFor(length, locale);
+  if (category === "hasard" && avoid) {
+    const others = options.filter((id) => id !== avoid);
+    if (others.length > 0) options = others;
+  }
   let from: RealCategoryId =
     category === "hasard" ? options[Math.floor(rng() * options.length)]! : category;
   let pool = resolvedPool(from, length, locale);

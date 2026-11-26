@@ -59,33 +59,33 @@ function Arm({ flip = false }: { flip?: boolean }) {
   return (
     <g transform={flip ? "scale(-1 1)" : undefined}>
       <path
-        d="M-13 68
-           C-22 72 -30 86 -31 104
-           C-32 118 -30 132 -26 140
-           C-23 144 -17 143 -16 138
-           C-18 128 -19 116 -18 104
-           C-17 88 -15 76 -9 68 Z"
+        d="M-13 69
+           C-18 73 -26 82 -26 94
+           C-26 104 -24 111 -21 114
+           C-18.4 116 -15.4 114.4 -15.4 111
+           C-16 102 -17 90 -15 80
+           C-14 74 -11 70 -9 68 Z"
         fill={SHIRT}
         stroke={INK}
         strokeWidth={LINE}
         strokeLinejoin="round"
       />
       <path
-        d="M-26 96 C-22 100 -19 98 -17 94"
+        d="M-22 84 C-19 87 -17 86 -16 83"
         fill="none"
         stroke={PAPER}
-        strokeWidth="1.5"
+        strokeWidth="1.2"
         strokeLinecap="round"
         opacity="0.28"
       />
       <path
-        d="M-27 132 Q-21 136 -16 131"
+        d="M-23 108 Q-19 111 -16 108"
         fill="none"
         stroke={SHIRT_SHADE}
-        strokeWidth="1.45"
+        strokeWidth="1.25"
         strokeLinecap="round"
       />
-      <g transform="translate(-21.4 136) scale(0.84)">
+      <g transform="translate(-19 111) scale(0.66)">
         <Hand />
       </g>
     </g>
@@ -152,23 +152,9 @@ function Torso() {
         strokeWidth={LINE}
         strokeLinejoin="round"
       />
-      <path
-        d="M-8 64 Q0 76 8 64 Q0 70 -8 64 Z"
-        fill={SKIN}
-        stroke={INK}
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-      <path d="M0 74 V108" stroke={SHIRT_SHADE} strokeWidth="1.15" strokeLinecap="round" />
-      <circle cx="0" cy="84" r="1.45" fill={PAPER} />
-      <circle cx="0" cy="96" r="1.45" fill={PAPER} />
-      <path
-        d="M6 88 H14.5 Q16 88 16 90.2 V96.5 Q16 98.2 14.2 98.2 H6.6 Q5.4 98.2 5.4 96.5 V90.2 Q5.4 88 6.8 88 Z"
-        fill={SHIRT_SHADE}
-        stroke={INK}
-        strokeWidth="1.15"
-        strokeLinejoin="round"
-      />
+      <path d="M0 72 V108" stroke={SHIRT_SHADE} strokeWidth="1.15" strokeLinecap="round" />
+      <circle cx="0" cy="82" r="1.45" fill={PAPER} />
+      <circle cx="0" cy="94" r="1.45" fill={PAPER} />
       <path
         d="M-12 74 Q-8 88 -11 108"
         fill="none"
@@ -185,6 +171,18 @@ function Torso() {
         strokeLinecap="round"
       />
     </g>
+  );
+}
+
+function Pocket() {
+  return (
+    <path
+      d="M5 66 H12.4 Q13.8 66 13.8 67.6 V74.2 Q13.8 75.8 12.2 75.8 H5.8 Q4.6 75.8 4.6 74.2 V67.6 Q4.6 66 6 66 Z"
+      fill={SHIRT_SHADE}
+      stroke={INK}
+      strokeWidth="1.15"
+      strokeLinejoin="round"
+    />
   );
 }
 
@@ -391,6 +389,9 @@ export function LeoFigure({
       <Limb on={show(6)}>
         <Leg flip />
       </Limb>
+      <Limb on={show(2)}>
+        <Torso />
+      </Limb>
       <Limb on={show(3)}>
         <Arm />
       </Limb>
@@ -398,7 +399,7 @@ export function LeoFigure({
         <Arm flip />
       </Limb>
       <Limb on={show(2)}>
-        <Torso />
+        <Pocket />
       </Limb>
       <Limb on={show(1)}>
         <Head status={status} panic={panic} />

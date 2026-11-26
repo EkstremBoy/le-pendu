@@ -116,7 +116,7 @@ export const useGame = create<State & Actions>((set, get) => ({
 
   startGame: (opts) => {
     unlockAudio();
-    const { length, category, stats } = get();
+    const { length, category, stats, wordCategory: previousCategory } = get();
     const locale = stats.locale;
     const isDaily = Boolean(opts?.daily);
     const isDuo = Boolean(opts?.duoWord);
@@ -125,7 +125,14 @@ export const useGame = create<State & Actions>((set, get) => ({
       ? null
       : isDaily
         ? dailyWord(new Date(), length, locale)
-        : pickWord(category, length, new Set(recent), locale);
+        : pickWord(
+            category,
+            length,
+            new Set(recent),
+            locale,
+            Math.random,
+            category === "hasard" ? previousCategory : null,
+          );
     const word = opts?.duoWord ? opts.duoWord : picked!.word;
     const wordCategory = picked ? picked.category : null;
     playSfx("click");

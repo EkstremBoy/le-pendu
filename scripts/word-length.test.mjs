@@ -69,6 +69,18 @@ test("a chosen category stays that category", () => {
   assert.ok(wordsFor("espace", "long", "fr").includes(pick.word));
 });
 
+test("hasard avoids the previous word's category", () => {
+  for (const locale of LOCALES) {
+    for (const length of LENGTHS) {
+      const first = pickWord("hasard", length, new Set(), locale, () => 0);
+      const second = pickWord("hasard", length, new Set(), locale, () => 0, first.category);
+      assert.notEqual(second.category, first.category);
+      const third = pickWord("hasard", length, new Set(), locale, () => 0.99, second.category);
+      assert.notEqual(third.category, second.category);
+    }
+  }
+});
+
 test("widenPool keeps the requested band until it is too small", () => {
   const bands = {
     short: ["a", "b"],
