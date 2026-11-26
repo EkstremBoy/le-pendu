@@ -1,8 +1,8 @@
 # Le Pendu
 
-Jeu du pendu bilingue (FR / EN), version douce.
+Jeu du pendu bilingue (FR / EN).
 
-Trois niveaux — Mini, Normal, Expert — neuf catégories, et un personnage à sauver avant la dernière lettre.
+Trois longueurs — Court, Moyen, Long — neuf catégories, et un personnage à sauver avant la dernière lettre.
 
 ## Local
 
